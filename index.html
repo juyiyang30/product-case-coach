@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plaud B2B Analytics Copilot</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">P</div>
+          <div>
+            <h1>Plaud B2B Analytics Copilot</h1>
+            <p>Ask in plain English. The agent clarifies, chooses a framework, queries Plaud data, and explains the conclusion.</p>
+          </div>
+        </div>
+        <button class="ghost-button" type="button" id="resetConversation">New Case</button>
+      </header>
+
+      <section class="chat-shell" aria-label="Case coach conversation">
+        <div class="chat-thread" id="chatThread"></div>
+      </section>
+
+      <section class="composer" aria-label="Message composer">
+        <div class="suggestions" id="suggestions"></div>
+        <form class="input-row" id="messageForm">
+          <textarea
+            id="messageInput"
+            rows="2"
+            placeholder="Ask a Plaud B2B product case question..."
+          ></textarea>
+          <button class="primary-button" type="submit">Send</button>
+        </form>
+      </section>
+    </main>
+
+    <template id="detailsTemplate">
+      <details class="detail-card">
+        <summary></summary>
+        <div class="detail-content"></div>
+      </details>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
