@@ -3,38 +3,86 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Plaud B2B Analytics Copilot</title>
+    <title>Product Case Coach</title>
+    <meta name="description" content="Learn to break down any product data question — step by step." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap"
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app">
-      <header class="topbar">
+    <div class="layout">
+      <aside class="sidebar" aria-label="Case progress">
         <div class="brand">
-          <div class="brand-mark">P</div>
-          <div>
-            <h1>Plaud B2B Analytics Copilot</h1>
-            <p>Ask in plain English. The agent clarifies, chooses a framework, queries Plaud data, and explains the conclusion.</p>
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19h4v-5h4V9h4V5h4" />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>Product Case Coach</h1>
+            <p>Learn to break down any product data question — step by step.</p>
           </div>
         </div>
-        <button class="ghost-button" type="button" id="resetConversation">New Case</button>
-      </header>
 
-      <section class="chat-shell" aria-label="Case coach conversation">
-        <div class="chat-thread" id="chatThread"></div>
-      </section>
+        <nav class="flow" aria-label="Case flow">
+          <p class="side-heading">Case flow</p>
+          <ol class="steps" id="caseSteps">
+            <li class="step" data-step="ask"><span class="step-num">01</span><div class="step-body"><span class="step-name">Ask</span><span class="step-why"></span></div></li>
+            <li class="step" data-step="clarify"><span class="step-num">02</span><div class="step-body"><span class="step-name">Clarify</span><span class="step-why"></span></div></li>
+            <li class="step" data-step="structure"><span class="step-num">03</span><div class="step-body"><span class="step-name">Structure</span><span class="step-why"></span></div></li>
+            <li class="step" data-step="query"><span class="step-num">04</span><div class="step-body"><span class="step-name">Query data</span><span class="step-why"></span></div></li>
+            <li class="step" data-step="conclusion"><span class="step-num">05</span><div class="step-body"><span class="step-name">Conclusion</span><span class="step-why"></span></div></li>
+          </ol>
+          <div class="step-dots" aria-hidden="true">
+            <span class="dots" id="stepDots"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="dots-label" id="stepDotsLabel">01 · Ask</span>
+          </div>
+        </nav>
 
-      <section class="composer" aria-label="Message composer">
-        <div class="suggestions" id="suggestions"></div>
-        <form class="input-row" id="messageForm">
-          <textarea
-            id="messageInput"
-            rows="2"
-            placeholder="Ask a Plaud B2B product case question..."
-          ></textarea>
-          <button class="primary-button" type="submit">Send</button>
-        </form>
-      </section>
-    </main>
+        <section class="case-card" aria-label="Current case">
+          <p class="side-heading">Current case</p>
+          <div id="caseCard">
+            <p class="case-empty">No case yet — pick an example →</p>
+          </div>
+        </section>
+
+        <button class="new-case" type="button" id="resetConversation">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <span>New case</span>
+        </button>
+      </aside>
+
+      <main class="main">
+        <header class="main-head">
+          <p class="eyebrow" id="mainEyebrow">Step 01 · Ask</p>
+          <h2 id="mainTitle">Start with one concrete question</h2>
+        </header>
+
+        <section class="chat-shell" aria-label="Case coach conversation">
+          <div class="chat-thread" id="chatThread"></div>
+        </section>
+
+        <section class="composer" aria-label="Message composer">
+          <div class="suggestions" id="suggestions"></div>
+          <form class="input-row" id="messageForm">
+            <textarea
+              id="messageInput"
+              rows="2"
+              placeholder="Ask a product question…"
+            ></textarea>
+            <button class="primary-button" type="submit">
+              <span>Send</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </button>
+          </form>
+          <footer class="credit">Frameworks adapted from Emma Ding's product case interview videos. Sample data is simulated for learning.</footer>
+        </section>
+      </main>
+    </div>
 
     <template id="detailsTemplate">
       <details class="detail-card">
@@ -44,5 +92,6 @@
     </template>
 
     <script src="./app.js"></script>
+    <script src="./coach-ui.js"></script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 const state = {
   stage: "start",
   question: "",
-  caseType: "metric",
+  caseType: "diagnose",
   metric: "target metric",
   clarification: "",
   dataContext: "",
@@ -10,17 +10,21 @@ const state = {
 };
 
 const caseTypes = {
-  metric: {
-    label: "Metric Diagnosis",
-    playbook: "Clarify metric -> QA data -> decompose lifecycle -> segment accounts -> infer cause -> design test"
+  diagnose: {
+    label: "Diagnose a metric change",
+    playbook: "Clarify the metric definition -> check the time pattern (sudden or gradual) -> internal causes (data, tracking, bugs, releases) vs external causes (seasonality, competitors, events) -> check whether related products or features moved too -> segment by region, platform, new vs existing users -> decompose the metric (e.g. DAU = retained + new + resurrected - churned) -> summarize the most likely cause and the fix"
   },
-  feature: {
-    label: "Launch / Feature Decision",
-    playbook: "Clarify goal -> map personas -> model ROI -> assess risk -> design beta -> decide launch"
+  measure: {
+    label: "Measure success",
+    playbook: "Clarify what the product does, who it is for, and what goal it serves -> pick at most 3 well-defined success metrics -> add 1 guardrail metric -> check that each metric actually fits this situation"
   },
-  acquisition: {
-    label: "Acquisition Efficiency",
-    playbook: "Clarify goal -> define ICP -> compare funnel quality -> model LTV/CAC -> simulate budget -> decide scale"
+  launch: {
+    label: "Launch or not",
+    playbook: "Clarify the goal -> state a hypothesis with success and guardrail metrics -> design the experiment (randomization unit, groups, sample size, MDE, duration) -> read the results (statistical vs practical significance) -> weigh short-term vs long-term impact when results conflict -> recommend launch or not and translate it into business impact"
+  },
+  improve: {
+    label: "Improve a product",
+    playbook: "Clarify the goal (engagement, retention, or revenue) and the scope -> walk the user journey (aware -> start -> complete) to find friction -> segment users (never used, lapsed, active) -> prioritize ideas by impact x cost -> define how you would measure the top idea"
   }
 };
 
@@ -29,85 +33,112 @@ const skillLibrary = {
     name: "Clarification Skill",
     source: "Emma Ding product case framework",
     when: "Always first, especially when the question is broad or ambiguous.",
-    does: "Clarifies goal, scope, metric definition, time window, persona, and constraints before analysis.",
-    output: "A small set of high-signal questions instead of a generic answer."
-  },
-  b2bLifecycle: {
-    name: "B2B Lifecycle Skill",
-    source: "B2B Product Sense framework",
-    when: "Use for Plaud Team questions involving acquisition, onboarding, activation, usage, renewal, or expansion.",
-    does: "Maps the issue across Lead -> Demo -> Trial -> Paid -> Onboarding -> Activation -> Usage -> Renewal -> Expansion.",
-    output: "The likely lifecycle stage where the issue is happening."
+    does: "Pins down the goal, scope, metric definition, time window, target users, and constraints before any analysis.",
+    output: "A small set of high-signal questions so you answer the right question."
   },
   metricDiagnosis: {
     name: "Metric Diagnosis Skill",
-    source: "Handwritten metric drop workflow + Emma metric diagnosis",
-    when: "Use when a metric drops, rises unexpectedly, or conflicts with another metric.",
-    does: "Checks metric definition, time trend, data QA, internal/external causes, decomposition, segmentation, and counterfactuals.",
-    output: "Ranked root-cause hypotheses and the analysis path to prove or disprove them."
+    source: "Author's own framework",
+    when: "Use when a metric drops, spikes unexpectedly, or conflicts with another metric.",
+    does: "Checks the metric definition, time pattern, data quality, internal vs external causes, related metrics, and decomposition into components.",
+    output: "Ranked root-cause hypotheses and the analysis path to prove or disprove each one."
+  },
+  metricDesign: {
+    name: "Metric Design Skill",
+    source: "Emma Ding product case framework",
+    when: "Use when you need to define what success looks like for a product, feature, or experiment.",
+    does: "Picks up to three clearly defined success metrics (who counts, what action, what time window) plus one guardrail metric.",
+    output: "A short metric set that is precise enough to compute and fits the product's goal."
+  },
+  userJourney: {
+    name: "User Journey Skill",
+    source: "Emma Ding product case framework",
+    when: "Use when the goal is to improve a product or increase a behavior.",
+    does: "Walks the journey from becoming aware of a feature, to starting it, to completing it, and finds where users drop off.",
+    output: "The step with the most friction, which is where improvement ideas should focus."
   },
   segmentation: {
     name: "Segmentation Skill",
-    source: "Emma user segmentation + B2B account segmentation",
-    when: "Use when the cause may differ by account, channel, persona, plan, platform, geography, or cohort.",
-    does: "Cuts the metric by channel, team size, vertical, admin role, platform, plan, new vs existing account, and cohort.",
-    output: "The segment most responsible for the business impact."
+    source: "Emma Ding product case framework",
+    when: "Use when the answer may differ by platform, region, user tenure, acquisition source, or behavior.",
+    does: "Cuts the metric by platform, region, new vs existing users, acquisition source, and usage level.",
+    output: "The segment that explains most of the change or holds the biggest opportunity."
   },
   inference: {
     name: "Inference Skill",
-    source: "Handwritten inference analytics framework",
-    when: "Use when descriptive metrics are not enough to know whether an action caused the movement.",
-    does: "Separates mix shift from true within-segment change; uses cohort comparison, counterfactuals, and causal caveats.",
-    output: "A defensible interpretation of what likely caused the change."
+    source: "Author's own framework",
+    when: "Use when descriptive numbers are not enough to know whether something caused the movement.",
+    does: "Separates mix shift (the user population changed) from real change within segments; uses cohorts, counterfactuals, and causal caveats.",
+    output: "A defensible interpretation of what most likely caused the change."
+  },
+  prioritization: {
+    name: "Prioritization Skill",
+    source: "Emma Ding product case framework",
+    when: "Use when you have several ideas and limited time or engineering capacity.",
+    does: "Scores each idea by how many users it reaches, how much it moves the goal metric, and how costly it is to build.",
+    output: "A ranked shortlist with one clear top idea to test first."
   },
   sql: {
     name: "SQL Generation Skill",
-    source: "Technical analytics execution layer",
-    when: "Use when the copilot needs evidence from Plaud warehouse or semantic metrics.",
-    does: "Selects tables, joins account/event/revenue data, and writes a query aligned to the selected framework.",
-    output: "SQL the data platform can run or adapt."
-  },
-  featureRoi: {
-    name: "Feature ROI Skill",
-    source: "B2B Product Sense ROI / launch-or-not framework",
-    when: "Use for questions like should Plaud build, launch, price, or package a feature.",
-    does: "Evaluates customer value, buyer value, cost, revenue lift, retention, expansion, risk, and opportunity cost.",
-    output: "Build, beta, delay, or reject recommendation with proof plan."
-  },
-  acquisition: {
-    name: "Acquisition Efficiency Skill",
-    source: "B2B Product Sense acquisition framework",
-    when: "Use for CAC, channel, lead quality, pipeline, payback, and growth-budget questions.",
-    does: "Compares channel quality by ICP fit, funnel conversion, activated teams, retention, LTV/CAC, payback, and support load.",
-    output: "Scale, narrow, cap, or pause channel recommendation."
+    source: "Author's own framework",
+    when: "Use when the analysis needs evidence from the data.",
+    does: "Selects tables, joins users, events, and experiment data, and writes a query that matches the chosen framework.",
+    output: "SQL you can run or adapt to your own warehouse."
   },
   experiment: {
     name: "Experiment Design Skill",
-    source: "Emma launch-or-not + A/B testing framework",
-    when: "Use when a recommendation needs proof before rollout.",
-    does: "Defines hypothesis, unit of randomization, primary metric, guardrails, sample-size logic, readout, and decision rule.",
-    output: "A validation plan that turns insight into action."
+    source: "Emma Ding product case framework",
+    when: "Use when a recommendation needs proof before a full rollout.",
+    does: "Defines the hypothesis, randomization unit, primary metric, guardrails, sample size and MDE, duration, and the decision rule.",
+    output: "A validation plan that turns an insight into a measurable decision."
   },
   executiveSummary: {
     name: "Executive Summary Skill",
-    source: "B2B stakeholder communication pattern",
+    source: "Author's own framework",
     when: "Always at the end.",
-    does: "Translates technical analysis into a concise conclusion for non-technical stakeholders.",
-    output: "Plain-English answer, confidence, caveats, and next step."
+    does: "Turns the analysis into a short recommendation with business impact, confidence, caveats, and next step.",
+    output: "A plain-English answer a non-technical stakeholder can act on."
   }
 };
 
 const skillChains = {
-  metric: ["clarify", "metricDiagnosis", "b2bLifecycle", "segmentation", "inference", "sql", "experiment", "executiveSummary"],
-  feature: ["clarify", "featureRoi", "b2bLifecycle", "sql", "experiment", "executiveSummary"],
-  acquisition: ["clarify", "acquisition", "b2bLifecycle", "segmentation", "inference", "sql", "experiment", "executiveSummary"]
+  diagnose: ["clarify", "metricDiagnosis", "segmentation", "inference", "sql", "experiment", "executiveSummary"],
+  measure: ["clarify", "metricDesign", "segmentation", "sql", "executiveSummary"],
+  launch: ["clarify", "metricDesign", "experiment", "inference", "sql", "executiveSummary"],
+  improve: ["clarify", "userJourney", "segmentation", "prioritization", "experiment", "executiveSummary"]
 };
 
 const examples = [
-  "Plaud Team activation dropped from 42% to 29% after B2B launch. How should I investigate?",
-  "Should Plaud build CRM integration for B2B sales teams?",
-  "Paid search CAC is low but Plaud Team activation is weak. Should we increase budget?"
+  "Our music streaming app's 7-day retention dropped from 42% to 29% after a redesign. How should I investigate?",
+  "A meditation app just launched a Sleep Stories feature. How do we know it's doing well?",
+  "A PM wants to double the number of ads in a social app's feed. Should we launch it?",
+  "How would you get more people to create posts on a social app?"
 ];
+
+const exampleTags = ["Diagnose", "Measure success", "Launch or not", "Improve"];
+
+const coachNotes = {
+  ask: {
+    why: "A good case starts from one concrete question about a metric or a decision.",
+    mistake: "Asking \"how do I improve the product?\" — too broad to analyze."
+  },
+  clarify: {
+    why: "Always clarify first: what the metric means, who the users are, what the goal is. Answering the wrong question is the biggest red flag.",
+    mistake: "Jumping straight to causes before agreeing what the number means."
+  },
+  structure: {
+    why: "Use a framework so you don't miss anything, but adapt it to the question instead of following it blindly.",
+    mistake: "Reciting a memorized framework step by step even where it doesn't fit."
+  },
+  query: {
+    why: "Quality over quantity: three well-defined metrics beat five vague ones. Separate mix shift from real change.",
+    mistake: "Reading one overall average and stopping there."
+  },
+  conclusion: {
+    why: "End with a recommendation, the business impact, and how you'd test it. Summarize your structure out loud.",
+    mistake: "Ending with \"it's complicated\" or a recommendation nobody can measure."
+  }
+};
 
 const chatThread = document.querySelector("#chatThread");
 const messageForm = document.querySelector("#messageForm");
@@ -116,27 +147,36 @@ const suggestions = document.querySelector("#suggestions");
 
 function classifyQuestion(question) {
   const q = question.toLowerCase();
-  if (/(cac|channel|acquisition|lead|mql|pipeline|paid search|outbound|inbound|budget|spend|\u83b7\u5ba2|\u6e20\u9053|\u6295\u653e|\u9884\u7b97)/.test(q)) {
-    return "acquisition";
+  if (/(measure|success|doing well|health|衡量|成功)/.test(q)) {
+    return "measure";
   }
-  if (/(should|build|launch|ship|feature|intent|emotion|sentiment|crm|pricing|roadmap|\u662f\u5426|\u8981\u4e0d\u8981|\u529f\u80fd|\u4e0a\u7ebf|\u53d1\u5e03)/.test(q)) {
-    return "feature";
+  if (/(\bshould (we|i|they)\b(?!\s+(investigate|look|dig|diagnose|analy|approach|start|think|measure))|\blaunch(?!ed)|\bship\b|\ba\/b\b|\bab test|experiment|\btest\b|上线|要不要)/.test(q)) {
+    return "launch";
   }
-  return "metric";
+  if (/(drop|dropped|declin|fell|decrease|went down|spike|investigate|下降|掉)/.test(q)) {
+    return "diagnose";
+  }
+  if (/(improve|increase|grow|ideas|get more|more people|提升|改进)/.test(q)) {
+    return "improve";
+  }
+  return "diagnose";
 }
 
 function detectMetric(question) {
   const q = question.toLowerCase();
   const candidates = [
-    ["activation", /(activation|activate|\u6fc0\u6d3b)/],
-    ["retention", /(retention|\u7559\u5b58)/],
-    ["renewal", /(renewal|renew|\u7eed\u7ea6)/],
-    ["churn", /(churn|\u6d41\u5931)/],
-    ["conversion", /(conversion|convert|\u8f6c\u5316)/],
-    ["adoption", /(adoption|usage|\u4f7f\u7528|\u91c7\u7528)/],
-    ["expansion", /(expansion|expand|\u6269\u5bb9)/],
-    ["CAC", /(cac|customer acquisition cost)/],
-    ["NRR", /(nrr|net revenue retention)/]
+    ["DAU", /(\bdau\b|daily active)/],
+    ["retention", /(retention|留存)/],
+    ["activation", /(activation|activate|激活)/],
+    ["churn", /(churn|流失)/],
+    ["conversion", /(conversion|convert|转化)/],
+    ["engagement", /(engagement|engaged|参与)/],
+    ["ads revenue", /(ads? revenue|\bads\b|广告)/],
+    ["posts", /(\bposts?\b|posting|发帖)/],
+    ["adoption", /(adoption|usage|使用|采用)/],
+    ["renewal", /(renewal|renew|续约)/],
+    ["expansion", /(expansion|expand|扩容)/],
+    ["CAC", /(cac|customer acquisition cost)/]
   ];
   const found = candidates.find(([, pattern]) => pattern.test(q));
   return found ? found[0] : "target metric";
@@ -148,6 +188,11 @@ function extractPercentages(text) {
 
 function getSelectedSkills() {
   return skillChains[state.caseType].map((key) => ({ key, ...skillLibrary[key] }));
+}
+
+function renderCoachNote(step) {
+  const note = coachNotes[step];
+  return `<aside class="coach-note"><span class="coach-title">Coach note</span><p><strong>Why:</strong> ${escapeHtml(note.why)}</p><p><strong>Common mistake:</strong> ${escapeHtml(note.mistake)}</p></aside>`;
 }
 
 function renderSkillCards(skills) {
@@ -209,15 +254,16 @@ function showWelcome() {
   chatThread.innerHTML = "";
   addMessage(
     "agent",
-    `<span class="label">Internal analytics copilot</span>
-    <p>Ask one Plaud B2B product question in plain English. I will clarify the case, choose the right framework, write SQL when needed, simulate querying Plaud's internal warehouse, then explain the conclusion and reasoning.</p>
+    `<span class="label">Start here</span>
+    <p>Pick one of the four common question types below, or ask your own. I'll walk you through it step by step — clarify, structure, query sample data, and land a recommendation.</p>
     <div class="structure-grid">
       ${examples
-        .map((example) => `<button class="mini-card example-button" type="button" data-example="${escapeHtml(example)}"><strong>Example</strong><span>${example}</span></button>`)
+        .map((example, index) => `<button class="mini-card example-button" type="button" data-example="${escapeHtml(example)}"><span class="case-tag">${exampleTags[index]}</span><span>${escapeHtml(example)}</span></button>`)
         .join("")}
-    </div>`
+    </div>
+    ${renderCoachNote("ask")}`
   );
-  setSuggestions([{ label: "Use activation drop example", action: "example_activation", primary: true }]);
+  setSuggestions([{ label: "Try the retention example", action: "example_activation", primary: true }]);
   state.stage = "start";
 }
 
@@ -241,16 +287,17 @@ function askClarifyingQuestions() {
   addMessage(
     "agent",
     `<span class="label">${type.label}</span>
-    <p>I classified this as <strong>${type.label}</strong>. I selected these skills first:</p>
+    <p>This is a <strong>${type.label}</strong> question. These are the skills I will lean on first:</p>
     <div class="structure-grid">
       ${renderSkillCards(skills.slice(0, 4))}
     </div>
     ${makeDetails("Full skill chain", renderSkillDetails(skills))}
-    <p>I would first clarify the problem before solving it. For this Plaud B2B case, I would ask:</p>
+    <p>Before solving anything, I would make sure we are answering the right question. I would ask:</p>
     <ol>
       ${getClarifyingQuestions().map((question) => `<li>${question}</li>`).join("")}
     </ol>
-    <p>Reply with whatever you know. If you do not know, say <strong>assume reasonable defaults</strong>.</p>`
+    <p>Reply with whatever you know. If you do not know, say <strong>assume reasonable defaults</strong>.</p>
+    ${renderCoachNote("clarify")}`
   );
   setSuggestions([
     { label: "Assume reasonable defaults", action: "assume_defaults", primary: true },
@@ -259,28 +306,49 @@ function askClarifyingQuestions() {
 }
 
 function getClarifyingQuestions() {
-  if (state.caseType === "feature") {
+  if (state.caseType === "measure") {
     return [
-      "What business outcome should this feature improve: ARPA, retention, expansion, sales conversion, or differentiation?",
-      "Who is the primary B2B persona: end user, admin, buyer, sales manager, IT, or compliance owner?",
-      "What risk matters most: privacy, accuracy, trust, implementation cost, or opportunity cost?",
-      "Should the answer optimize for beta validation, full launch, or roadmap prioritization?"
+      "What does the feature do, and what problem does it solve for the user?",
+      "Who is it for: all users, new users, or a specific group such as heavy users?",
+      "What is the business goal behind it: engagement, retention, or revenue?",
+      "How long has it been live, and is it available to everyone or only some users?"
     ];
   }
-  if (state.caseType === "acquisition") {
+  if (state.caseType === "launch") {
     return [
-      "Are we optimizing cheap leads, paid accounts, activated teams, retained ARR, or payback period?",
-      "Which channel, segment, or campaign are we discussing?",
-      "Do we have downstream quality data: activation, retention, expansion, support load, and LTV/CAC?",
-      "Is there a sales or customer-success capacity constraint?"
+      "What is the goal of the change: more revenue, more engagement, or something else?",
+      "What could it hurt? Which user experience or long-term metric are we worried about?",
+      "Has it been tested yet, or are we designing the experiment from scratch?",
+      "Is this a reversible change we can roll back, and how much traffic can we test on?"
+    ];
+  }
+  if (state.caseType === "improve") {
+    return [
+      "What does \"more\" mean here: more people doing it at least once, or the same people doing it more often?",
+      "What is the underlying goal: engagement, retention, or revenue?",
+      "Which users are in scope: everyone, new users, or people who have never done it?",
+      "Are there constraints such as a time frame, team size, or platform?"
     ];
   }
   return [
-    `What exactly counts as ${state.metric}: numerator, denominator, and account-level aggregation?`,
-    "What time window are we comparing, and did the movement happen suddenly or gradually?",
-    "Is the issue global, or concentrated in self-serve, sales-led, SMB, mid-market, a vertical, or a channel?",
-    "Do we know whether tracking, product release timing, or customer mix changed?"
+    `What exactly counts as ${state.metric}: who is in the denominator, what action counts, and over what time window?`,
+    "When did it change, and did it happen suddenly (one day) or gradually (over weeks)?",
+    "Did anything else change at the same time: a release, a tracking change, a marketing campaign, or a holiday?",
+    "Is it everywhere, or concentrated in one platform, region, or user group?"
   ];
+}
+
+function getDefaultAssumptions() {
+  if (state.caseType === "measure") {
+    return "Assume reasonable defaults: the feature is live for all users for about two weeks, it targets existing users, and the goal is long-term engagement and retention.";
+  }
+  if (state.caseType === "launch") {
+    return "Assume reasonable defaults: the goal is revenue, the main risk is a worse user experience that lowers engagement, nothing has been tested yet, and the change is easy to roll back.";
+  }
+  if (state.caseType === "improve") {
+    return "Assume reasonable defaults: more people creating at least one item per week, the underlying goal is engagement, all active users are in scope, and we have one quarter.";
+  }
+  return "Assume reasonable defaults: standard metric definition, the change happened suddenly after a release, no known tracking change yet, and we do not know which segment is affected.";
 }
 
 function acceptClarification(text) {
@@ -296,7 +364,7 @@ function showStructure() {
   addMessage(
     "agent",
     `<span class="label">Proposed structure</span>
-    <p>Here is the structure I would use. It is specific to Plaud B2B, but still interview-friendly.</p>
+    <p>Here is the structure I would use. It follows the <strong>${type.label}</strong> framework, adapted to this question.</p>
     <div class="structure-grid">
       ${getStructureCards().map(([title, body]) => `<div class="mini-card"><strong>${title}</strong><span>${body}</span></div>`).join("")}
     </div>
@@ -307,43 +375,54 @@ function showStructure() {
       </div>
     </details>
     ${makeDetails("Skills used in this structure", renderSkillDetails(skills))}
-    <p>Does this structure fit the way you want to solve the case?</p>`
+    <p>Does this structure fit the way you want to solve the case?</p>
+    ${renderCoachNote("structure")}`
   );
   setSuggestions([
-    { label: "Looks good, query Plaud data", action: "run_analysis", primary: true },
+    { label: "Looks good, query the sample data", action: "run_analysis", primary: true },
     { label: "Give final answer with assumptions", action: "final" },
     { label: "Restart", action: "restart" }
   ]);
 }
 
 function getStructureCards() {
-  if (state.caseType === "feature") {
+  if (state.caseType === "measure") {
     return [
-      ["Goal", "Clarify whether the feature should drive retention, expansion, ARPA, or strategic differentiation."],
-      ["Personas", "Separate end user value from admin, buyer, IT, and compliance concerns."],
-      ["ROI", "Estimate revenue upside, retention lift, expansion potential, model cost, support cost, and opportunity cost."],
-      ["Risk", "Check privacy, trust, model accuracy, explainability, and workflow fit."],
-      ["Validation", "Recommend beta, experiment, or customer discovery before broad launch."],
-      ["Decision", "Ship, beta, delay, or reject with clear evidence thresholds."]
+      ["Goal", "Restate what the feature does, who it is for, and which business goal it serves."],
+      ["Adoption", "What share of eligible users tried it at least once in their first 7 days?"],
+      ["Engagement", "Among users who tried it, how deeply and how often do they use it each week?"],
+      ["Retention", "Do users who adopt it come back more over 4 weeks than similar users who don't?"],
+      ["Guardrail", "Make sure it isn't just stealing time from other parts of the product."],
+      ["Fit check", "Confirm each metric is clearly defined and actually reflects this feature's goal."]
     ];
   }
-  if (state.caseType === "acquisition") {
+  if (state.caseType === "launch") {
     return [
-      ["Goal", "Clarify whether success means cheap leads or retained high-quality B2B revenue."],
-      ["ICP", "Compare the channel against Plaud's ideal team account profile."],
-      ["Funnel", "Measure Lead -> Demo -> Trial -> Paid -> Activated Team -> Retained Account."],
-      ["Unit economics", "Use CAC, LTV/CAC, payback, sales effort, and support cost."],
-      ["Quality", "Check activation, retention, expansion, and account health by segment."],
-      ["Decision", "Scale, narrow targeting, cap spend, or pause."]
+      ["Goal", "Clarify what the change is meant to achieve and what it could put at risk."],
+      ["Hypothesis", "State the expected effect, the primary success metric, and the guardrail metrics."],
+      ["Experiment design", "Randomization unit, control vs treatment, sample size, MDE, and duration."],
+      ["Read results", "Check statistical significance and whether the effect is large enough to matter."],
+      ["Trade-offs", "If metrics conflict, weigh the short-term win against the long-term cost."],
+      ["Decision", "Launch, launch a smaller version, or don't launch — translated into business impact."]
+    ];
+  }
+  if (state.caseType === "improve") {
+    return [
+      ["Goal", "Clarify whether we want more people doing it, or the same people doing it more."],
+      ["User journey", "Aware of the feature -> start it -> complete it -> get value. Find the biggest drop-off."],
+      ["Segments", "Never done it, used to do it but stopped, and doing it regularly need different ideas."],
+      ["Ideas", "Generate a few ideas that remove friction at the weakest step for the biggest segment."],
+      ["Prioritize", "Rank ideas by impact (users reached x expected lift) against cost to build."],
+      ["Measure", "Define the primary metric and guardrail for testing the top idea."]
     ];
   }
   return [
-    ["Goal", `Clarify why ${state.metric} matters for Plaud B2B business performance.`],
-    ["Metric definition", "Define numerator, denominator, eligible population, and account aggregation."],
-    ["Data QA", "Check tracking, dashboard logic, missing data, outliers, and product release timing."],
-    ["Lifecycle", "Map the issue across signup, onboarding, activation, usage, renewal, and expansion."],
-    ["Segmentation", "Cut by channel, team size, vertical, admin role, platform, and cohort."],
-    ["Inference", "Separate mix shift from true within-segment performance change before recommending fixes."]
+    ["Clarify the metric", `Agree on how ${state.metric} is defined: who counts, what action, what time window.`],
+    ["Time pattern", "Sudden drops usually mean a release, bug, or tracking change; gradual ones point to trends."],
+    ["Internal vs external", "Internal: data pipeline, tracking, bugs, releases. External: seasonality, competitors, news events."],
+    ["Related metrics", "Did other features or products move too? A shared drop suggests a common cause."],
+    ["Segment", "Cut by platform, region, new vs existing users, and acquisition source to find where it lives."],
+    ["Decompose & infer", "Break the metric into parts (retained + new + resurrected - churned) and separate mix shift from real change."]
   ];
 }
 
@@ -354,15 +433,16 @@ function runInternalAnalysis() {
   const skills = getSelectedSkills();
   addMessage(
     "agent",
-    `<span class="label">Running internal analysis</span>
-    <p>I would use Plaud's internal platform instead of asking a non-technical teammate to gather raw data. The selected skills decide what to query and how to interpret it.</p>
+    `<span class="label">Querying sample data</span>
+    <p>Now I let the structure decide what to query. The data below comes from a simulated sample warehouse, so you can see what real evidence for each step looks like.</p>
     <div class="structure-grid">
       ${result.sources.map(([title, body]) => `<div class="mini-card"><strong>${title}</strong><span>${body}</span></div>`).join("")}
     </div>
     ${makeDetails("Skill-to-data mapping", renderSkillDataMapping(skills))}
-    ${makeDetails("SQL generated by agent", result.sql)}
+    ${makeDetails("SQL used for this step", result.sql)}
     <p><strong>Result:</strong> ${result.result}</p>
-    <p><strong>Conclusion:</strong> ${result.conclusion}</p>`
+    <p><strong>Conclusion:</strong> ${result.conclusion}</p>
+    ${renderCoachNote("query")}`
   );
   setSuggestions([
     { label: "Explain how you got this", action: "reasoning", primary: true },
@@ -375,19 +455,22 @@ function renderSkillDataMapping(skills) {
   return skills
     .map((skill) => {
       if (skill.key === "sql") {
-        return `${skill.name}: writes the query against Plaud warehouse / semantic layer.`;
+        return `${skill.name}: writes the query against the sample warehouse (sample_warehouse.*).`;
       }
       if (skill.key === "inference") {
-        return `${skill.name}: interprets whether the result is mix shift, true performance change, or insufficient evidence.`;
+        return `${skill.name}: decides whether the result is mix shift, a real change, or not enough evidence.`;
       }
       if (skill.key === "segmentation") {
-        return `${skill.name}: chooses account cuts such as channel, team size, vertical, admin role, platform, and cohort.`;
+        return `${skill.name}: chooses cuts such as platform, region, new vs existing users, and acquisition source.`;
       }
-      if (skill.key === "featureRoi") {
-        return `${skill.name}: decides which usage, revenue, risk, and customer-value tables are needed.`;
+      if (skill.key === "metricDesign") {
+        return `${skill.name}: defines exactly which events and time windows each success and guardrail metric uses.`;
       }
-      if (skill.key === "acquisition") {
-        return `${skill.name}: pulls CAC, funnel quality, LTV/CAC, payback, and downstream activation metrics.`;
+      if (skill.key === "userJourney") {
+        return `${skill.name}: pulls step-by-step funnel events to find where users drop off.`;
+      }
+      if (skill.key === "prioritization") {
+        return `${skill.name}: sizes each segment so ideas can be ranked by reach and expected impact.`;
       }
       return `${skill.name}: ${skill.output}`;
     })
@@ -398,161 +481,242 @@ function showDataNeededFallback() {
   state.stage = "data";
   addMessage(
     "agent",
-    `<span class="label">If warehouse access is missing</span>
-    <p>If I cannot query Plaud's internal data directly, I would ask the data owner for these fields. This is the fallback path, not the ideal user experience.</p>
+    `<span class="label">If you don't have the data</span>
+    <p>In an interview, or when you can't query data yourself, ask for these fields. Asking for specific data shows you know what evidence would settle the question.</p>
     <ol>
       ${getDataRequests().map((request) => `<li>${request}</li>`).join("")}
-    </ol>`
+    </ol>
+    ${renderCoachNote("query")}`
   );
   setSuggestions([
-    { label: "Use mock Plaud warehouse", action: "run_analysis", primary: true },
+    { label: "Use the sample warehouse", action: "run_analysis", primary: true },
     { label: "Final answer with assumptions", action: "final" }
   ]);
 }
 
 function getDataRequests() {
-  if (state.caseType === "feature") {
+  if (state.caseType === "measure") {
     return [
-      "How many target B2B accounts would use the feature weekly?",
-      "What buyer value would it unlock: revenue lift, retention, coaching, compliance, or time saved?",
-      "What are the major implementation and trust risks?",
-      "Can we run a beta with opt-in teams and compare usage, satisfaction, expansion intent, and risk tickets?"
+      "Daily count of eligible users and users who used the feature at least once, since launch.",
+      "Per-user feature usage: sessions per week and completion rate.",
+      "4-week retention for adopters vs similar non-adopters (same signup week, platform, and prior activity).",
+      "Usage of the rest of the product per user, before and after launch, to check for cannibalization."
     ];
   }
-  if (state.caseType === "acquisition") {
+  if (state.caseType === "launch") {
     return [
-      "CAC and paid team conversion by channel and segment.",
-      "Activation, week 4 retention, expansion, and support tickets by channel cohort.",
-      "Sales touch rate and CSM workload by channel.",
-      "Predicted LTV/CAC and payback by vertical, company size, and plan."
+      "Experiment assignment table: user, group (control or treatment), and assignment date.",
+      "Primary metric per user during the test (for example revenue per user).",
+      "Guardrail metrics per user: time spent, sessions, 7-day retention, and negative feedback such as hides or reports.",
+      "Pre-experiment values of the same metrics, to check the groups were balanced."
+    ];
+  }
+  if (state.caseType === "improve") {
+    return [
+      "Funnel events for each step of the journey: saw the entry point, started, completed.",
+      "User segments: never did it, did it before but stopped, does it regularly — with counts.",
+      "What happens after completion, such as feedback received, and whether that predicts doing it again.",
+      "Any qualitative signal: survey answers or support tickets about why people stop."
     ];
   }
   return [
-    `${state.metric} by cohort before and after the change.`,
-    `${state.metric} by acquisition channel, team size, vertical, admin role, plan, and platform.`,
-    "Event funnel: signup, admin setup, seat invites, device binding, first recording, first AI summary, and week 4 usage.",
-    "Any product launches, tracking changes, pricing changes, or campaign changes in the same window."
+    `Daily ${state.metric} for the last 8–12 weeks, with release and tracking-change dates marked.`,
+    `${state.metric} split by platform, app version, region, new vs existing users, and acquisition source.`,
+    "Segment sizes before and after the change, to measure mix shift.",
+    "Step-by-step funnel events for the flow most likely affected, before and after the change."
   ];
 }
 
 function buildAnalysisResult() {
-  if (state.caseType === "feature") return buildFeatureAnalysisResult();
-  if (state.caseType === "acquisition") return buildAcquisitionAnalysisResult();
-  return buildMetricAnalysisResult();
+  if (state.caseType === "measure") return buildMeasureAnalysisResult();
+  if (state.caseType === "launch") return buildLaunchAnalysisResult();
+  if (state.caseType === "improve") return buildImproveAnalysisResult();
+  return buildDiagnoseAnalysisResult();
 }
 
-function buildMetricAnalysisResult() {
+function getChangeNumbers() {
+  const values = extractPercentages(`${state.question} ${state.clarification} ${state.dataContext}`);
+  if (values.length < 2) {
+    return { baseline: "the baseline", current: "the current level", delta: null, mix: null, real: null };
+  }
+  const delta = Math.round(Math.abs(values[1] - values[0]) * 10) / 10;
+  const mix = Math.round(delta * 0.3 * 10) / 10;
+  const real = Math.round((delta - mix) * 10) / 10;
+  return { baseline: `${values[0]}%`, current: `${values[1]}%`, delta, mix, real };
+}
+
+function buildDiagnoseAnalysisResult() {
   const metric = state.metric;
+  const numbers = getChangeNumbers();
+  const split = numbers.delta
+    ? `About ${numbers.mix} of the ${numbers.delta} points come from mix shift (a marketing push brought in more low-intent new users), and about ${numbers.real} points are a real decline within segments.`
+    : "About 30% of the drop comes from mix shift (a marketing push brought in more low-intent new users), and about 70% is a real decline within segments.";
   return {
     sources: [
-      ["Metric layer", `activation, retention, NRR, expansion definitions from Plaud semantic metrics`],
-      ["Event warehouse", "workspace signup, device binding, seat invites, recordings, AI summaries"],
-      ["Account data", "company size, vertical, source, plan, admin role, region"],
-      ["Experiment log", "recent launches, onboarding changes, pricing tests, campaign changes"]
+      ["Metric definitions", `${metric} definition, eligible users, and time window`],
+      ["Event log", "sessions, key actions, and funnel steps by user and day"],
+      ["Users table", "signup date, platform, app version, region, acquisition source"],
+      ["Release log", "app releases, tracking changes, experiments, and campaigns"]
     ],
-    sql: `-- Agent-generated SQL for Plaud B2B ${metric} diagnosis
-with workspace_funnel as (
+    sql: `-- Diagnose a change in ${metric}: where did it happen, and is it mix shift or real change?
+with user_metric as (
   select
-    w.workspace_id,
-    w.signup_week,
-    w.acquisition_channel,
-    w.company_size,
-    w.vertical,
-    w.plan_type,
-    w.admin_role,
-    max(e.event_name = 'device_bound') as device_bound,
-    count_if(e.event_name = 'seat_invited') as invited_seats,
-    count_if(e.event_name = 'summary_created' and e.days_since_signup <= 7) as summaries_7d,
-    count_if(e.event_name = 'summary_created' and e.days_since_signup between 22 and 28) as summaries_w4
-  from plaud_warehouse.workspaces w
-  left join plaud_warehouse.workspace_events e
-    on w.workspace_id = e.workspace_id
-  where w.signup_week >= current_date - interval '12 weeks'
-  group by 1,2,3,4,5,6,7
+    u.user_id,
+    u.signup_week,
+    u.platform,
+    u.region,
+    case when u.signup_date >= current_date - interval '28 days' then 'new' else 'existing' end as tenure,
+    u.acquisition_source,
+    case when r.release_date is not null and u.first_seen_date >= r.release_date
+      then 'after_release' else 'before_release' end as period,
+    max(case when e.days_since_signup between 1 and 7 then 1 else 0 end) as retained_7d
+  from sample_warehouse.users u
+  left join sample_warehouse.events e
+    on u.user_id = e.user_id
+  left join sample_warehouse.releases r
+    on r.release_name = 'redesign'
+  where u.signup_week >= current_date - interval '12 weeks'
+  group by 1, 2, 3, 4, 5, 6, 7
 ),
-metric_by_segment as (
+by_segment as (
   select
-    acquisition_channel,
-    company_size,
-    vertical,
-    admin_role,
-    avg(case when signup_week < current_date - interval '4 weeks'
-      then (invited_seats >= 2 and device_bound and summaries_7d >= 3)::int end) as baseline_activation,
-    avg(case when signup_week >= current_date - interval '4 weeks'
-      then (invited_seats >= 2 and device_bound and summaries_7d >= 3)::int end) as current_activation,
-    count(*) as workspaces
-  from workspace_funnel
-  group by 1,2,3,4
+    platform,
+    tenure,
+    acquisition_source,
+    avg(case when period = 'before_release' then retained_7d end) as before_rate,
+    avg(case when period = 'after_release' then retained_7d end) as after_rate,
+    count(case when period = 'before_release' then 1 end) as users_before,
+    count(case when period = 'after_release' then 1 end) as users_after
+  from user_metric
+  group by 1, 2, 3
 )
 select *,
-  current_activation - baseline_activation as within_segment_delta,
-  workspaces * (current_activation - baseline_activation) as weighted_impact
-from metric_by_segment
+  after_rate - before_rate as within_segment_change,
+  users_after * (after_rate - before_rate) as weighted_impact
+from by_segment
 order by abs(weighted_impact) desc;`,
-    result:
-      "The drop is concentrated in self-serve SMB teams from paid search. Roughly 8 points are explained by signup mix shift, while about 5 points remain as a true within-segment activation decline.",
-    conclusion:
-      "The likely root cause is onboarding/team-value friction, not a global product failure. Prioritize an admin-led onboarding intervention before changing broad GTM strategy."
+    result: `The drop was sudden and started on the day of the release; tracking checks found no logging change. It is concentrated in new Android users: their ${metric} fell sharply, while iOS and existing users barely moved. ${split}`,
+    conclusion: `The most likely cause is a usability problem in the redesigned first-time flow on Android, not a product-wide decline. Fix or roll back that flow first, then confirm ${metric} recovers for new Android users.`
   };
 }
 
-function buildFeatureAnalysisResult() {
+function buildMeasureAnalysisResult() {
   return {
     sources: [
-      ["Usage warehouse", "meeting volume, summary review, sharing, team workspace behavior"],
-      ["Revenue data", "plan tier, ARPA, expansion, renewal, paid seats"],
-      ["Voice of customer", "sales calls, support tickets, CSM notes, win/loss reasons"],
-      ["Risk logs", "privacy tickets, AI correction feedback, enterprise security objections"]
+      ["Event log", "feature opens, starts, completions, and timestamps"],
+      ["Users table", "signup date, platform, prior activity level"],
+      ["Sessions", "time spent and sessions per user across the whole product"],
+      ["Release log", "feature launch date and rollout percentage"]
     ],
-    sql: `-- Agent-generated feature opportunity query
+    sql: `-- Measure success of a new feature: adoption, engagement, retention, and a guardrail
+with eligible as (
+  select user_id, platform, signup_week
+  from sample_warehouse.users
+  where last_active_date >= (select launch_date from sample_warehouse.releases where release_name = 'new_feature')
+),
+feature_use as (
+  select
+    e.user_id,
+    count(case when e.event_name = 'feature_start' then 1 end) as starts,
+    count(case when e.event_name = 'feature_complete' then 1 end) as completes
+  from sample_warehouse.events e
+  where e.event_date >= current_date - interval '14 days'
+  group by 1
+)
 select
-  vertical,
-  company_size,
-  plan_type,
-  count(distinct workspace_id) as active_workspaces,
-  avg(meetings_per_week) as meetings_per_week,
-  avg(shared_summaries_per_week) as shared_summaries_per_week,
-  avg(admin_review_rate) as admin_review_rate,
-  avg(expansion_signal_60d) as expansion_signal_60d,
-  avg(ai_correction_rate) as ai_correction_rate
-from plaud_warehouse.b2b_workspace_health
-where meetings_per_week >= 5
-group by 1,2,3
-order by expansion_signal_60d desc, active_workspaces desc;`,
-    result:
-      "Sales and customer-facing teams show the highest meeting volume, admin review behavior, and expansion signals. Trust risk is meaningful because AI correction and privacy-ticket rates are higher in regulated verticals.",
-    conclusion:
-      "Build only as a controlled B2B beta. Package the feature around manager coaching and account-risk insight, with opt-in controls and clear AI confidence labels."
+  avg(case when f.starts > 0 then 1.0 else 0 end) as adoption_rate,
+  sum(f.completes) * 1.0 / nullif(sum(f.starts), 0) as completion_rate,
+  avg(case when f.starts > 0 then s.retained_week4 end) as adopter_week4_retention,
+  avg(case when coalesce(f.starts, 0) = 0 then s.retained_week4 end) as non_adopter_week4_retention,
+  avg(s.other_sessions_per_week_after) - avg(s.other_sessions_per_week_before) as guardrail_other_usage_change
+from eligible u
+left join feature_use f on u.user_id = f.user_id
+left join sample_warehouse.user_weekly_summary s on u.user_id = s.user_id;`,
+    result: "In the first two weeks, 18% of eligible weekly users tried the feature at least once, and 61% of starts were completed. Adopters had 46% week-4 retention vs 38% for similar non-adopters. The guardrail held: usage of the rest of the product changed by only -1% per user.",
+    conclusion: "Early signals are healthy: real adoption, strong completion, and no sign of stealing usage from the core product. The retention gap is partly self-selection (engaged users try new things), so confirm it with a small holdout group before claiming the feature causes retention."
   };
 }
 
-function buildAcquisitionAnalysisResult() {
+function buildLaunchAnalysisResult() {
   return {
     sources: [
-      ["Marketing data", "channel, campaign, spend, MQL, SQL, demo, paid team"],
-      ["Product data", "activation, seat invite, device binding, summaries, retention"],
-      ["Revenue data", "ACV, expansion, refunds, predicted LTV"],
-      ["CS data", "onboarding tickets, support load, implementation time"]
+      ["Experiment assignments", "user, group, and assignment date for a 2-week test"],
+      ["Revenue events", "impressions, clicks, and revenue per user"],
+      ["Engagement events", "sessions, time spent, and 7-day retention"],
+      ["Feedback events", "hides, reports, and negative signals"]
     ],
-    sql: `-- Agent-generated channel quality query
+    sql: `-- Read an A/B test: primary metric plus guardrails, by group
+with per_user as (
+  select
+    a.user_id,
+    a.group_name,
+    sum(r.revenue) as revenue,
+    sum(g.minutes_spent) as minutes_spent,
+    max(g.retained_7d) as retained_7d,
+    count(case when f.event_name = 'hide_item' then 1 end) as hides
+  from sample_warehouse.experiment_assignments a
+  left join sample_warehouse.revenue_events r on a.user_id = r.user_id and r.event_date >= a.assigned_date
+  left join sample_warehouse.engagement_daily g on a.user_id = g.user_id and g.event_date >= a.assigned_date
+  left join sample_warehouse.feedback_events f on a.user_id = f.user_id and f.event_date >= a.assigned_date
+  where a.experiment_name = 'feed_change_test'
+  group by 1, 2
+)
 select
-  acquisition_channel,
-  vertical,
-  company_size,
-  sum(spend) / nullif(count(distinct paid_workspace_id), 0) as cac,
-  avg(activated_7d) as activation_rate,
-  avg(retained_week4) as week4_retention,
-  avg(expanded_60d) as expansion_rate,
-  avg(predicted_ltv) / nullif(avg(cac), 0) as ltv_cac,
-  avg(support_tickets_30d) as support_load
-from plaud_warehouse.channel_quality
-where signup_date >= current_date - interval '90 days'
-group by 1,2,3
-order by ltv_cac desc, activation_rate desc;`,
-    result:
-      "Paid search has lower CAC but weaker activation and higher support load. Consulting and sales-team subsegments retain well; generic SMB traffic does not.",
-    conclusion:
-      "Do not scale the channel broadly. Narrow targeting to high-fit ICP segments and use quality-adjusted CAC, not raw CAC, as the decision metric."
+  group_name,
+  count(*) as users,
+  avg(revenue) as revenue_per_user,
+  avg(minutes_spent) as minutes_per_user,
+  avg(retained_7d) as retention_7d,
+  avg(hides) as hides_per_user,
+  stddev(revenue) as revenue_sd
+from per_user
+group by 1;`,
+    result: "Revenue per user rose 14% (statistically significant). But time spent fell 3.2% (significant), hides per user rose 40%, and 7-day retention dipped 0.6 points (not yet significant after two weeks, but trending down).",
+    conclusion: "The results conflict: a clear short-term revenue win against signs of long-term damage to engagement, which is what future revenue depends on. Don't launch the full change; test a smaller version and run longer to see whether the engagement loss grows."
+  };
+}
+
+function buildImproveAnalysisResult() {
+  return {
+    sources: [
+      ["Funnel events", "saw entry point, opened composer, started, published"],
+      ["Users table", "signup date, platform, activity level"],
+      ["Feedback events", "replies, likes, and views on a user's first item"],
+      ["Segments", "never did it, did it before but stopped, does it regularly"]
+    ],
+    sql: `-- Improve a behavior: find the leakiest journey step and size each segment
+with journey as (
+  select
+    user_id,
+    max(case when event_name = 'entry_point_seen' then 1 else 0 end) as aware,
+    max(case when event_name = 'composer_opened' then 1 else 0 end) as started,
+    max(case when event_name = 'item_published' then 1 else 0 end) as completed
+  from sample_warehouse.events
+  where event_date >= current_date - interval '28 days'
+  group by 1
+),
+segments as (
+  select
+    user_id,
+    case
+      when lifetime_items = 0 then 'never'
+      when items_last_28d = 0 then 'lapsed'
+      else 'active'
+    end as creator_segment
+  from sample_warehouse.user_summary
+)
+select
+  s.creator_segment,
+  count(*) as users,
+  avg(j.aware) as aware_rate,
+  avg(case when j.aware = 1 then j.started end) as start_rate,
+  avg(case when j.started = 1 then j.completed end) as complete_rate
+from segments s
+join journey j on s.user_id = j.user_id
+group by 1
+order by users desc;`,
+    result: "70% of monthly users have never created anything, so that is the biggest segment. Most of them see the entry point, but of those who open the composer, 45% leave without publishing. Among people who did create, those who got no response in the first 24 hours were about half as likely to create again.",
+    conclusion: "The biggest friction is the blank-page moment in the composer, and the second is no feedback after the first try. Start with low-cost composer help (prompts or templates) for never-creators, and make sure first items get seen."
   };
 }
 
@@ -575,7 +739,8 @@ function showFinalAnswer() {
     ${makeDetails("How I got this conclusion", buildReasoningExplanation())}
     ${makeDetails("SQL / analysis plan", result ? result.sql : answer.sql)}
     ${makeDetails("Experiment or validation plan", answer.experiment)}
-    ${makeDetails("Concise talk track", answer.talkTrack)}`
+    ${makeDetails("Concise talk track", answer.talkTrack)}
+    ${renderCoachNote("conclusion")}`
   );
   setSuggestions([
     { label: "Try another case", action: "restart", primary: true },
@@ -586,181 +751,186 @@ function showFinalAnswer() {
 
 function buildReasoningExplanation() {
   const skills = getSelectedSkills();
-  return `1. Clarify the business question
-I first classified the request as ${caseTypes[state.caseType].label}. That determines which framework to use instead of blindly applying one generic framework.
+  return `1. Clarify the question
+I first identified this as a "${caseTypes[state.caseType].label}" question. The question type decides which framework to use, instead of forcing one generic framework onto everything.
 
-2. Select the skill chain
+2. Pick the skill chain
 Selected skills:
 ${skills.map((skill) => `- ${skill.name}: ${skill.output}`).join("\n")}
 
-3. Apply the Plaud B2B product framework
-I separated end-user behavior, admin workflow, buyer value, account retention, and revenue impact. This matters because B2B product questions are account-level, not just individual-user questions.
+3. Adapt the framework to this case
+I kept the steps that matter for this question and skipped the ones that don't. A framework is a checklist so you don't miss anything, not a script to recite.
 
-4. Query the internal platform
-I would use Plaud's metric layer, event warehouse, account/revenue data, and experiment logs. The agent writes SQL only when needed and hides that complexity from non-technical users.
+4. Let the structure decide the data
+Each step of the structure points to a specific query: which table, which metric, which cut. Writing SQL comes after knowing what question it answers.
 
-5. Analyze and infer
-For metric problems, I separate data quality issues, customer mix shift, and true within-segment performance changes. For feature and acquisition questions, I connect usage, revenue, risk, and validation.
+5. Analyze carefully
+I looked beyond the overall average: cut by segment, checked whether the user mix changed, and checked whether the effect is large enough to matter, not just statistically significant.
 
-6. Recommend a testable action
-I do not stop at insight. I translate the conclusion into an experiment, beta, or GTM decision with success metrics and guardrails.`;
+6. End with a testable recommendation
+I translated the finding into an action, its business impact, and a way to measure it, so the answer can actually be acted on.`;
 }
 
 function makeDetails(title, content) {
   return `
     <details class="detail-card">
       <summary>${title}</summary>
-      <div class="detail-content"><pre>${escapeHtml(content)}</pre></div>
+      <div class="detail-content"><pre${/SQL/.test(title) ? ' class="code"' : ""}>${escapeHtml(content)}</pre></div>
     </details>
   `;
 }
 
 function buildFinalAnswer() {
-  if (state.caseType === "feature") {
-    return buildFeatureAnswer();
-  }
-  if (state.caseType === "acquisition") {
-    return buildAcquisitionAnswer();
-  }
-  return buildMetricAnswer();
+  if (state.caseType === "measure") return buildMeasureAnswer();
+  if (state.caseType === "launch") return buildLaunchAnswer();
+  if (state.caseType === "improve") return buildImproveAnswer();
+  return buildDiagnoseAnswer();
 }
 
-function buildMetricAnswer() {
-  const values = extractPercentages(`${state.question} ${state.clarification} ${state.dataContext}`);
-  const baseline = values[0] ? `${values[0]}%` : "baseline";
-  const current = values[1] ? `${values[1]}%` : "current";
-  const delta = values.length >= 2 ? `${Math.round((values[1] - values[0]) * 10) / 10} pts` : "unknown";
+function buildDiagnoseAnswer() {
+  const numbers = getChangeNumbers();
+  const delta = numbers.delta ? `-${numbers.delta} pts (${numbers.baseline} -> ${numbers.current})` : "Size not given yet";
   return {
     summary: `
-      <p>I would frame this as a Plaud B2B ${state.metric} investigation, not a generic dashboard review.</p>
-      <p>The goal is to determine whether the movement from ${baseline} to ${current} is caused by data quality, customer mix, lifecycle friction, or a true product performance decline.</p>
+      <p>I would treat this as a structured ${state.metric} investigation, not a dashboard scroll.</p>
+      <p>The goal is to find out whether the move from ${numbers.baseline} to ${numbers.current} comes from a data problem, a change in who the users are (mix shift), or a real change in how users behave — and then fix the right thing.</p>
     `,
     cards: `
       <div class="structure-grid">
         <div class="mini-card"><strong>Observed change</strong><span>${delta}</span></div>
-        <div class="mini-card"><strong>Top hypothesis</strong><span>Self-serve or lower-fit teams are failing during onboarding or first team value.</span></div>
-        <div class="mini-card"><strong>Inference check</strong><span>Compare observed rate to counterfactual rate under prior segment mix.</span></div>
-        <div class="mini-card"><strong>Recommendation</strong><span>Do not change GTM broadly until we isolate the segment and lifecycle break.</span></div>
+        <div class="mini-card"><strong>Top hypothesis</strong><span>A release broke or slowed a key step for one segment (e.g. new users on one platform).</span></div>
+        <div class="mini-card"><strong>Inference check</strong><span>Recompute ${state.metric} with the old user mix to separate mix shift from real change.</span></div>
+        <div class="mini-card"><strong>Recommendation</strong><span>Fix or roll back the affected flow for that segment, then confirm the metric recovers.</span></div>
       </div>
     `,
-    sql: `-- Root-cause plan for Plaud B2B ${state.metric}
-with cohort_metrics as (
-  select
-    workspace_id,
-    cohort_week,
-    acquisition_channel,
-    company_size,
-    vertical,
-    admin_role,
-    plan_type,
-    platform,
-    metric_numerator,
-    metric_denominator,
-    metric_numerator * 1.0 / nullif(metric_denominator, 0) as metric_value
-  from plaud_b2b.account_metric_daily
-  where cohort_week >= current_date - interval '12 weeks'
-),
-segment_compare as (
-  select
-    acquisition_channel,
-    company_size,
-    vertical,
-    admin_role,
-    avg(case when cohort_week < current_date - interval '4 weeks' then metric_value end) as baseline_rate,
-    avg(case when cohort_week >= current_date - interval '4 weeks' then metric_value end) as current_rate,
-    count(*) as accounts
-  from cohort_metrics
-  group by 1,2,3,4
-)
-select *,
-  current_rate - baseline_rate as within_segment_delta,
-  accounts * (current_rate - baseline_rate) as weighted_impact
-from segment_compare
-order by abs(weighted_impact) desc;`,
-    experiment: `Hypothesis: If the main lifecycle friction is onboarding or first team value, targeted admin guidance should improve ${state.metric}.
+    sql: `-- Analysis plan for diagnosing ${state.metric}
+-- 1. Plot daily ${state.metric} for 12 weeks; mark releases and tracking changes.
+-- 2. Validate tracking: event counts per platform and app version around the change date.
+-- 3. Segment by platform, region, new vs existing users, acquisition source.
+-- 4. Decompose: metric_change = mix_effect + within_segment_effect
+select
+  segment,
+  share_before, share_after,
+  rate_before, rate_after,
+  (share_after - share_before) * rate_before as mix_effect,
+  share_after * (rate_after - rate_before) as within_segment_effect
+from sample_warehouse.segment_metric_summary
+order by abs(within_segment_effect) desc;`,
+    experiment: `Hypothesis: The new flow added friction for the affected segment. Restoring or fixing that step will bring ${state.metric} back toward the baseline.
 
-Design: Randomize eligible new B2B workspaces into current experience vs guided admin checklist / team value proof.
+Design: Randomize new users in the affected segment between the current flow and the fixed (or previous) flow.
 
-Primary metric: ${state.metric}.
-Secondary metrics: seat activation, summaries per active seat, week 4 retention.
-Guardrails: signup completion, support tickets, privacy complaints, refund rate.
+Primary metric: ${state.metric} (using the agreed definition and time window).
+Secondary metrics: completion rate of the affected step, sessions in the first week.
+Guardrails: crash rate, signup completion, any metric the redesign was meant to improve.
 
-Decision rule: Launch only if the lift is statistically and practically meaningful with no guardrail degradation.`,
-    talkTrack: `I would start by clarifying the metric definition and affected segment. Then I would check data quality and product launch timing. After that, I would segment by channel, company size, vertical, admin role, and plan. The key inference step is to separate mix shift from true within-segment decline. If the issue is concentrated in self-serve teams, I would test an admin onboarding intervention with ${state.metric} as the primary metric and week 4 retention as a guardrail.`
+Decision rule: Ship the fix if ${state.metric} improves by a meaningful amount with no guardrail getting worse.`,
+    talkTrack: `First I would clarify how ${state.metric} is defined and when the change started. Because the drop was sudden, I would check internal causes first — tracking, bugs, and the release — before external ones like seasonality or competitors. Then I would segment by platform, region, and new vs existing users, and separate mix shift from real change. Here, most of the drop is a real decline among new users on one platform right after the release, so I would fix that flow and test it, using ${state.metric} as the primary metric with crash rate and signups as guardrails.`
   };
 }
 
-function buildFeatureAnswer() {
+function buildMeasureAnswer() {
   return {
     summary: `
-      <p>I would treat this as a launch decision, not a yes/no product taste question.</p>
-      <p>For Plaud B2B, the feature should be evaluated by buyer value, team workflow fit, monetization potential, trust risk, and measurable account impact.</p>
+      <p>"Doing well" only means something once we tie it to the feature's goal.</p>
+      <p>I would use three clearly defined success metrics — adoption, engagement, and retention — plus one guardrail to make sure the feature isn't just taking time away from the rest of the product.</p>
     `,
     cards: `
       <div class="structure-grid">
-        <div class="mini-card"><strong>Decision</strong><span>Beta before broad launch.</span></div>
-        <div class="mini-card"><strong>Buyer value</strong><span>Must connect to sales coaching, customer risk, compliance, or measurable productivity.</span></div>
-        <div class="mini-card"><strong>Risk</strong><span>Privacy, model accuracy, explainability, and user trust.</span></div>
-        <div class="mini-card"><strong>Monetization</strong><span>Potential premium B2B intelligence module if beta proves value.</span></div>
+        <div class="mini-card"><strong>Adoption</strong><span>% of eligible weekly users who start the feature at least once within 7 days.</span></div>
+        <div class="mini-card"><strong>Engagement</strong><span>Completion rate per start, and uses per adopter per week.</span></div>
+        <div class="mini-card"><strong>Retention</strong><span>Week-4 retention of adopters vs similar non-adopters (confirm with a holdout).</span></div>
+        <div class="mini-card"><strong>Guardrail</strong><span>Usage of the rest of the product per user should not drop.</span></div>
       </div>
     `,
-    sql: `# Feature ROI model
-benefit = incremental_arpa + expansion_lift + churn_reduction + sales_cycle_savings
-cost = engineering_cost + model_cost + support_cost + trust_compliance_cost + opportunity_cost
-roi = (benefit - cost) / cost
+    sql: `-- Success metric definitions
+-- adoption_rate   = users with >= 1 feature_start in 7 days / eligible weekly active users
+-- completion_rate = feature_complete events / feature_start events
+-- retention_gap   = week-4 retention (adopters) - week-4 retention (matched non-adopters)
+-- guardrail       = change in other-feature sessions per user, before vs after launch
+select adoption_rate, completion_rate, retention_gap, guardrail_other_usage_change
+from sample_warehouse.feature_success_summary;`,
+    experiment: `Validation: Keep a small random holdout (for example 5% of users) who don't see the feature for 4 weeks.
 
-# Validate with beta:
-# usage per account, admin satisfaction, expansion intent, correction rate, opt-out rate, privacy tickets`,
-    experiment: `Run a 6-week opt-in B2B beta with a small set of target teams.
+Primary metric: week-4 retention, holdout vs exposed users.
+Secondary metrics: adoption rate, completion rate, uses per adopter per week.
+Guardrail: sessions in the rest of the product per user.
 
-Primary metric: weekly active teams using the feature.
-Secondary metrics: admin satisfaction, expansion intent, workflow completion, sales/customer success value.
-Guardrails: opt-out rate, correction rate, privacy tickets, support load.
-
-Decision rule: Package for paid B2B only if usage and buyer value are strong while trust risks remain low.`,
-    talkTrack: `I would not launch purely because the feature sounds strategic. I would map personas first: end users, admins, buyers, IT, and compliance. Then I would define the value hypothesis and risk threshold. My recommendation would be a controlled beta, with clear metrics for usage, buyer value, expansion intent, and trust guardrails.`
+Decision rule: Call the feature a success if exposed users retain meaningfully better than the holdout and the guardrail holds.`,
+    talkTrack: `I would start by clarifying what the feature does, who it is for, and what goal it serves. Then I would pick three well-defined metrics: adoption — the share of eligible users who try it in a week; engagement — how often they complete it; and retention — whether adopters come back more. I would add one guardrail, usage of the rest of the product, to catch cannibalization. Because adopters self-select, I would confirm the retention effect with a small holdout before calling it a success.`
   };
 }
 
-function buildAcquisitionAnswer() {
+function buildLaunchAnswer() {
   return {
     summary: `
-      <p>I would not scale a B2B channel just because CAC is low.</p>
-      <p>The right question is whether the channel creates retained, activated, expandable Plaud Team accounts with healthy payback.</p>
+      <p>This is a launch decision, so the answer should come from a well-designed experiment, not opinion.</p>
+      <p>The key is to measure both the intended win (the primary metric) and what it might cost (guardrails), and to weigh short-term gains against long-term user experience.</p>
     `,
     cards: `
       <div class="structure-grid">
-        <div class="mini-card"><strong>Core metric</strong><span>Quality-adjusted CAC, not raw CAC.</span></div>
-        <div class="mini-card"><strong>Risk</strong><span>Cheap leads may create weak activation, high support load, and low retention.</span></div>
-        <div class="mini-card"><strong>Analysis</strong><span>Compare channel cohorts through activation, retention, expansion, and payback.</span></div>
-        <div class="mini-card"><strong>Decision</strong><span>Scale, narrow, cap, or pause by ICP segment.</span></div>
+        <div class="mini-card"><strong>Decision</strong><span>Don't launch the full change; test a smaller version for longer.</span></div>
+        <div class="mini-card"><strong>Primary metric</strong><span>Revenue per user: +14%, significant.</span></div>
+        <div class="mini-card"><strong>Guardrails</strong><span>Time spent -3.2% and hides +40%; retention trending down.</span></div>
+        <div class="mini-card"><strong>Business impact</strong><span>Short-term revenue now vs fewer engaged users and less future revenue later.</span></div>
       </div>
     `,
-    sql: `select
-  acquisition_channel,
-  vertical,
-  company_size,
-  count(distinct workspace_id) as paid_teams,
-  avg(cac) as avg_cac,
-  avg(activated_7d) as activation_rate,
-  avg(retained_week4) as week4_retention,
-  avg(expanded_60d) as expansion_rate,
-  avg(predicted_ltv) / nullif(avg(cac), 0) as ltv_cac
-from plaud_b2b.channel_quality
-where signup_date >= current_date - interval '90 days'
-group by 1,2,3
-order by ltv_cac desc, paid_teams desc;`,
-    experiment: `Run an incremental budget test.
+    sql: `-- Experiment readout
+-- lift = (treatment_mean - control_mean) / control_mean
+-- check: p-value < 0.05 AND lift > practical threshold (e.g. +2% revenue, < -1% time spent)
+select metric_name, control_mean, treatment_mean,
+       (treatment_mean - control_mean) / control_mean as lift,
+       p_value
+from sample_warehouse.experiment_results
+where experiment_name = 'feed_change_test';`,
+    experiment: `Hypothesis: A moderate version of the change raises revenue without meaningfully hurting engagement.
 
-Control: broad low-CAC targeting.
-Treatment: ICP-filtered targeting with stricter qualification.
+Design: Randomize at the user level (so each person has a consistent experience). Control = current experience; treatments = 1.3x and 1.5x of the change.
+Sample size: Size the test to detect a 1% change in time spent (MDE) with 80% power at 5% significance.
+Duration: At least 4 weeks, covering full weekly cycles and letting novelty effects fade.
 
-Primary metric: activated retained teams per dollar.
-Secondary metrics: demo-to-paid, week 4 retention, sales workload, predicted LTV/CAC.
-Guardrails: lead volume, customer success capacity, support tickets.
+Primary metric: revenue per user.
+Guardrails: time spent per user, 7-day retention, negative feedback (hides, reports).
 
-Decision rule: Scale only if quality-adjusted CAC and payback improve.`,
-    talkTrack: `I would separate acquisition volume from customer quality. In B2B, a low CAC channel can still be bad if it attracts accounts that never activate, retain, or expand. I would compare cohorts by downstream quality and use quality-adjusted CAC as the decision metric.`
+Decision rule: Launch the largest version where revenue lift is significant and meaningful and no guardrail drops beyond its threshold.`,
+    talkTrack: `I would clarify the goal — revenue — and what we're worried about — user experience. I would run a user-level A/B test with revenue per user as the primary metric and time spent, retention, and negative feedback as guardrails. In the results, revenue rose 14%, but time spent fell and hides rose sharply, so the metrics conflict. Since engagement drives future revenue, I would not launch the full change. Instead I would test smaller versions for at least four weeks and pick the one that grows revenue without hurting engagement.`
+  };
+}
+
+function buildImproveAnswer() {
+  return {
+    summary: `
+      <p>To improve a behavior, find where users get stuck and who gets stuck, then pick the cheapest idea with the biggest reach.</p>
+      <p>Here the biggest group is people who have never done it, and the biggest friction is the blank-page moment right after they start.</p>
+    `,
+    cards: `
+      <div class="structure-grid">
+        <div class="mini-card"><strong>Biggest segment</strong><span>~70% of monthly users have never done it.</span></div>
+        <div class="mini-card"><strong>Biggest friction</strong><span>45% of people who start leave without finishing.</span></div>
+        <div class="mini-card"><strong>Top idea</strong><span>Prompts or templates at the start step: high reach, low cost.</span></div>
+        <div class="mini-card"><strong>Next ideas</strong><span>Make sure first attempts get feedback; auto-save drafts; rewards only if cheap ideas fail.</span></div>
+      </div>
+    `,
+    sql: `-- Prioritization: impact x cost
+-- impact = users_reached * expected_lift_in_goal_metric
+-- idea                          reach     expected_lift   cost     priority
+-- prompts / templates at start  high      medium          low      1
+-- feedback on first attempt     medium    high            medium   2
+-- auto-save drafts              medium    low             low      3
+-- creator rewards program       high      medium          high     4
+select creator_segment, users, aware_rate, start_rate, complete_rate
+from sample_warehouse.journey_by_segment;`,
+    experiment: `Hypothesis: Showing prompts or templates when someone opens the composer reduces the blank-page drop-off and gets more people to finish.
+
+Design: Randomize users who have never created anything, at the user level: control = current composer; treatment = composer with prompts.
+Duration: 2–4 weeks to cover weekly cycles.
+
+Primary metric: % of weekly active users who publish at least one item.
+Secondary metrics: start-to-finish rate, second item within 14 days.
+Guardrails: quality signals (reports or hides per item), and time spent reading other people's content.
+
+Decision rule: Launch if more people create and quality and reading time don't drop.`,
+    talkTrack: `First I would clarify whether "more" means more people or more items per person, and what goal it serves. Then I would walk the user journey — seeing the entry point, starting, finishing — and segment users into never, lapsed, and active. The biggest opportunity is never-creators who start but give up on a blank page. I would rank ideas by impact against cost, start with prompts or templates because they are cheap and reach the most users, and test it with the share of weekly users who create something as the primary metric and content quality as the guardrail.`
   };
 }
 
@@ -776,7 +946,7 @@ function handleAction(action) {
   }
   if (action === "assume_defaults") {
     state.assumptions.push("reasonable defaults");
-    acceptClarification("Assume reasonable defaults: account-level metric, recent cohorts, likely self-serve and sales-led split, and no confirmed tracking issue yet.");
+    acceptClarification(getDefaultAssumptions());
     return;
   }
   if (action === "structure") {
@@ -795,7 +965,7 @@ function handleAction(action) {
     addMessage(
       "agent",
       `<span class="label">Reasoning path</span>
-      <p>I used the case framework to decide what to query, not the other way around.</p>
+      <p>The framework decided what to query, not the other way around.</p>
       ${makeDetails("Framework-to-data logic", buildReasoningExplanation())}`
     );
     setSuggestions([
@@ -805,7 +975,7 @@ function handleAction(action) {
     return;
   }
   if (action === "partial_data") {
-    acceptData("Partial data only: cohort, channel, company size, activation or retention rate, and a few event funnel steps.");
+    acceptData("Partial data only: the overall metric over time, a split by platform and new vs existing users, and a few funnel steps.");
     return;
   }
   if (action === "final") {
@@ -814,11 +984,11 @@ function handleAction(action) {
   }
   if (action === "sql") {
     const sql = state.analysisResult ? state.analysisResult.sql : buildFinalAnswer().sql;
-    addMessage("agent", `<span class="label">SQL detail</span><p>This is the SQL the agent would generate against Plaud's internal warehouse or semantic layer.</p>${makeDetails("Generated SQL", sql)}`);
+    addMessage("agent", `<span class="label">SQL detail</span><p>This is the SQL behind the analysis, written against a simulated sample warehouse. Table and column names are illustrative — adapt them to your own data.</p>${makeDetails("SQL", sql)}`);
     return;
   }
   if (action === "pitch") {
-    addMessage("agent", `<span class="label">Final pitch</span><p>This agent helps Plaud employees ask product and growth questions in plain English. It chooses the right B2B framework, queries Plaud's internal data, writes SQL when needed, analyzes the result, and explains the reasoning behind a decision-ready recommendation.</p>`);
+    addMessage("agent", `<span class="label">Final pitch</span><p>Product Case Coach teaches people without a product background how to think systematically about product data questions. It sorts a question into one of four types — diagnose a metric change, measure success, launch or not, improve a product — then walks through clarifying, structuring, querying sample data, and concluding, with a coach note at every step explaining why it matters and what mistake to avoid.</p>`);
   }
 }
 
